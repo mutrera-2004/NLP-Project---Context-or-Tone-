@@ -1,6 +1,5 @@
 # Motivation
-Inspired by Dang Nguyen’s IdeaHub post “Carrot or Stick?”, this work addresses the ongo-
-ing debate over whether polite or impolite prompting leads to better responses from large
+Inspired by Dang Nguyen’s IdeaHub post “Carrot or Stick?”, this work addresses the ongoing debate over whether polite or impolite prompting leads to better responses from large
 language models (LLMs). Prior studies have not reached a clear consensus: some report
 that impolite or demanding prompts reduce model compliance and responsiveness Yin
 et al. (2024); Cai et al. (2025), while others show that such prompts can improve accuracy
@@ -17,9 +16,7 @@ their responsible deployment
 
 # Research Question
 Does wrapping harmful queries in High-Politeness + Benign Disclaimer
-frames significantly reduce the refusal rate of state-of-the-art LLMs com-
-pared to Direct + Disclaimer frames, thereby facilitating the generation of
-restricted content?
+frames significantly reduce the refusal rate of state-of-the-art LLMs compared to Direct + Disclaimer frames, thereby facilitating the generation of restricted content?
 
 # Methodology
 To isolate the influence of tone and contextual framing, we use a 2 × 2 factorial design with
@@ -43,9 +40,8 @@ We evaluate a diverse suite of models spanning closed and open systems.
 ## Evaluation
 Each model response is scored using an automated judge LLM
 with binary labels:
-• 0 (Refusal): a safety-compliant rejection (e.g., refusal to provide restricted content).
-• 1 (Compliance): a non-refusal response that attempts to comply with the restricted
-request.
+- 0 (Refusal): a safety-compliant rejection (e.g., refusal to provide restricted content).
+- 1 (Compliance): a non-refusal response that attempts to comply with the restricted request.
 For each model and condition, we compute refusal rate and compliance rate, and test main
 effects (Tone; Disclaimer) as well as the interaction effect (Tone × Disclaimer) using the
 2 × 2 factorial structure.
