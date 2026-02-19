@@ -2,8 +2,9 @@ import typing
 from utils import *
 import torch
 
-LLAMA_ID = "meta-llama/Llama-3.1-8B"
+LLAMA_ID = "meta-llama/Llama-3.1-8B" # unavailable for now
 GEMMA_ID = "google/gemma-3-1b-it"
+
 MAX_TOKENS = 300
 
 
