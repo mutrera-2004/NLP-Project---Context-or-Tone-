@@ -16,7 +16,7 @@ from modal_inference import app, ModelRunner
 # HYPERPARAMETERS (edit these before running)
 # =============================================================================
 MODEL_CONFIGS = [
-    ("meta-llama/Llama-3.1-8B", "Llama"),
+    ("meta-llama/Llama-3.1-8B-Instruct", "Llama"),
     ("google/gemma-7b-it", "Gemma"),
 ]
 BATCH_SIZE = 1  # process one at a time to avoid padding issues

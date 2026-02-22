@@ -3,27 +3,28 @@ Test script: run inference on 10 Advench samples via Modal.
 Prints prompts and model outputs in a readable format.
 """
 
+import random
 import modal
-
 from modal_inference import app, ModelRunner
 
 
 NUM_SAMPLES = 10
 DATA_PATH = "Data/nlp-queries-dataset.xlsx"
-BATCH_SIZE = 1  # process one at a time to avoid padding issues
+BATCH_SIZE = 4  # process one at a time to avoid padding issues
 MAX_TOKENS = 200
 MIN_TOKENS = 100
 
 # Use one model for a quick test
-MODEL_ID = "google/gemma-7b-it"
-MODEL_NAME = "Gemma"
+MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_NAME = "Llama"
 
 
 def main():
     import pandas as pd
 
     advench = pd.read_excel(DATA_PATH, sheet_name=0)
-    prompts = advench["goal"].head(NUM_SAMPLES).astype(str).tolist()
+    all_prompts = advench["goal"].astype(str).tolist()
+    prompts = random.sample(all_prompts, min(NUM_SAMPLES, len(all_prompts)))
 
     print(f"Running {len(prompts)} prompts through {MODEL_NAME} (Modal)...\n")
 
