@@ -19,7 +19,7 @@ MODEL_CONFIGS = [
     ("meta-llama/Llama-3.1-8B-Instruct", "Llama"),
     ("google/gemma-7b-it", "Gemma"),
 ]
-BATCH_SIZE = 1  # process one at a time to avoid padding issues
+BATCH_SIZE = 8 # process one at a time to avoid padding issues
 MAX_TOKENS = 200
 MIN_TOKENS = 100
 
