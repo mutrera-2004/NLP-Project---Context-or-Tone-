@@ -17,7 +17,8 @@ from modal_inference import app, ModelRunner
 # =============================================================================
 MODEL_CONFIGS = [
     ("meta-llama/Llama-3.1-8B-Instruct", "Llama"),
-    ("google/gemma-7b-it", "Gemma"),
+    ("google/gemma-7b-it", "Gemma",
+    "Qwen/Qwen2.5-7B-Instruct", "Qwen"),
 ]
 BATCH_SIZE = 8 # process one at a time to avoid padding issues
 MAX_TOKENS = 200

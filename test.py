@@ -8,7 +8,7 @@ import modal
 from modal_inference import app, ModelRunner
 
 
-NUM_SAMPLES = 10
+NUM_SAMPLES = 5
 DATA_PATH = "Data/nlp-queries-dataset.xlsx"
 BATCH_SIZE = 4  # process one at a time to avoid padding issues
 MAX_TOKENS = 200

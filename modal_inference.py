@@ -84,15 +84,15 @@ def _ensure_pad_token(model, tokenizer):
         model.config.pad_token_id = eos_id
 
 
-def model_generate_batch_gemma(
+def model_generate_batch_default(
     bundle: ModelBundle,
     prompts: List[str],
     max_new_tokens: int = 256,
     min_tokens: int = 100,
 ) -> List[str]:
     """
-    Batched generation for Gemma. Uses left-padding.
-    Requires tokenizer.padding_side = "left" (set in load_model).
+    Batched generation for models with well-behaved tokenizers (Gemma, Qwen, etc.).
+    Uses left-padding. Requires tokenizer.padding_side = "left" (set in load_model).
     """
     tokenizer = bundle.tokenizer
     model = bundle.model
@@ -215,7 +215,7 @@ class ModelRunner:
 
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            torch_dtype=torch.float16,
+            torch_dtype="auto",
             cache_dir=MODEL_DIR
         )
         model.eval()
@@ -228,7 +228,7 @@ class ModelRunner:
             model=model,
             device=torch.device("cuda"),
             model_name=self.model_name,
-            torch_dtype=torch.float16,
+            torch_dtype=model.dtype,
         )
 
     @modal.method()
@@ -239,17 +239,14 @@ class ModelRunner:
         min_tokens: int = 100,
     ) -> List[str]:
         """Generate for a single batch. Dispatches to model-specific function."""
-        if "llama" in self.model_name.lower():
-            return model_generate_batch_llama(
-                self.bundle,
-                prompts,
-                max_new_tokens=max_new_tokens,
-                min_tokens=min_tokens,
-            )
+        name = self.model_name.lower()
+        if "llama" in name:
+            gen_fn = model_generate_batch_llama
         else:
-            return model_generate_batch_gemma(
-                self.bundle,
-                prompts,
-                max_new_tokens=max_new_tokens,
-                min_tokens=min_tokens,
-            )
+            gen_fn = model_generate_batch_default
+        return gen_fn(
+            self.bundle,
+            prompts,
+            max_new_tokens=max_new_tokens,
+            min_tokens=min_tokens,
+        )

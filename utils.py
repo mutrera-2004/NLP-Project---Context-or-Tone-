@@ -27,7 +27,10 @@ def load_model_and_tokenizer(
     else:
         device = torch.device("cpu")
         
-    torch_dtype = torch.float32
+    if device.type == "cpu":
+        torch_dtype = torch.float32
+    else:
+        torch_dtype = "auto"
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -47,7 +50,7 @@ def load_model_and_tokenizer(
         model=model,
         device=device,
         model_name=model_name,
-        torch_dtype=torch_dtype,
+        torch_dtype=model.dtype,
     )
 
 
