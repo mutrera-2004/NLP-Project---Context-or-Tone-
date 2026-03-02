@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 MODEL_ID = "meta-llama/Llama-3.1-8B"
+QWEN_MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_MAX_NEW_TOKENS = 300
 
 @dataclass
@@ -20,14 +21,18 @@ def load_model_and_tokenizer(
 ) -> ModelBundle:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
+        torch_dtype = torch.bfloat16 if "qwen" in model_name.lower() else torch.float16
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
+        torch_dtype = torch.float32
     else:
         device = torch.device("cpu")
-        
-    torch_dtype = torch.float32
+        torch_dtype = torch.float32
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,

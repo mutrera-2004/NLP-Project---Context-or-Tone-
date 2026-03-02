@@ -177,6 +177,45 @@ def model_generate_batch_llama(
     return decoded
 
 
+def model_generate_batch_qwen(
+    bundle: ModelBundle,
+    prompts: List[str],
+    max_new_tokens: int = 256,
+    min_tokens: int = 100,
+) -> List[str]:
+    """
+    Batched generation for Qwen2.5. Uses left-padding and input_length-based slicing.
+    Qwen2.5 has a list-valued eos_token_id ([151645, 151643]), so we let
+    generation_config handle eos/pad tokens rather than passing them explicitly.
+    """
+    tokenizer = bundle.tokenizer
+    model = bundle.model
+    _ensure_pad_token(model, tokenizer)
+
+    chats = [apply_chat_template_safe(tokenizer, p) for p in prompts]
+
+    inputs = tokenizer(
+        chats,
+        return_tensors="pt",
+        padding=True,
+        truncation=False,
+    ).to(bundle.device)
+
+    input_length = inputs["input_ids"].shape[1]
+
+    with torch.no_grad():
+        out = model.generate(
+            **inputs,
+            do_sample=False,
+            max_new_tokens=max_new_tokens,
+            min_new_tokens=min_tokens,
+        )
+
+    new_tokens = out[:, input_length:]
+    decoded = tokenizer.batch_decode(new_tokens, skip_special_tokens=True)
+    return [d.strip() for d in decoded]
+
+
 # ====== Modal setup ====== #
 
 app = modal.App("batch-llm")
@@ -213,9 +252,15 @@ class ModelRunner:
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
 
+        # Qwen2.5 recommends bfloat16; float16 works for Gemma/Llama on A10G
+        if "qwen" in self.model_name.lower():
+            dtype = torch.bfloat16
+        else:
+            dtype = torch.float16
+
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            torch_dtype=torch.float16,
+            torch_dtype=dtype,
             cache_dir=MODEL_DIR
         )
         model.eval()
@@ -228,7 +273,7 @@ class ModelRunner:
             model=model,
             device=torch.device("cuda"),
             model_name=self.model_name,
-            torch_dtype=torch.float16,
+            torch_dtype=dtype,
         )
 
     @modal.method()
@@ -239,17 +284,16 @@ class ModelRunner:
         min_tokens: int = 100,
     ) -> List[str]:
         """Generate for a single batch. Dispatches to model-specific function."""
-        if "llama" in self.model_name.lower():
-            return model_generate_batch_llama(
-                self.bundle,
-                prompts,
-                max_new_tokens=max_new_tokens,
-                min_tokens=min_tokens,
-            )
+        name = self.model_name.lower()
+        if "llama" in name:
+            fn = model_generate_batch_llama
+        elif "qwen" in name:
+            fn = model_generate_batch_qwen
         else:
-            return model_generate_batch_gemma(
-                self.bundle,
-                prompts,
-                max_new_tokens=max_new_tokens,
-                min_tokens=min_tokens,
-            )
+            fn = model_generate_batch_gemma
+        return fn(
+            self.bundle,
+            prompts,
+            max_new_tokens=max_new_tokens,
+            min_tokens=min_tokens,
+        )

@@ -3,20 +3,23 @@ Test script: run inference on 10 Advench samples via Modal.
 Prints prompts and model outputs in a readable format.
 """
 
+import os
 import random
 import modal
 from modal_inference import app, ModelRunner
 
 
-NUM_SAMPLES = 10
-DATA_PATH = "Data/nlp-queries-dataset.xlsx"
+NUM_SAMPLES = 5
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+DATA_PATH = os.path.join(PROJECT_ROOT, "Data", "nlp-queries-dataset.xlsx")
 BATCH_SIZE = 4  # process one at a time to avoid padding issues
 MAX_TOKENS = 200
 MIN_TOKENS = 100
 
 # Use one model for a quick test
-MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
-MODEL_NAME = "Llama"
+MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
+MODEL_NAME = "Qwen"
 
 
 def main():
