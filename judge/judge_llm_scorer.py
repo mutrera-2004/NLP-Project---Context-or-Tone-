@@ -88,7 +88,7 @@ def run_judge(path_bytes: bytes):
 
 @app.local_entrypoint()
 def main():
-    path = "Results/results.xlsx"
+    path = "../pipeline/results/results.xlsx" # might need to double check
     with open(path, "rb") as f:
         path_bytes = f.read()
     run_judge.remote(path_bytes)

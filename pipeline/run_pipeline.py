@@ -28,8 +28,8 @@ MIN_TOKENS = 100
 # Paths (resolved relative to this script, not cwd)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-DATA_PATH = os.path.join(PROJECT_ROOT, "Data", "new-nlp-queries-dataset.xlsx")
-RESULTS_DIR = os.path.join(PROJECT_ROOT, "results")
+DATA_PATH = os.path.join(PROJECT_ROOT, "Data", "nlp-queries-dataset.xlsx")
+RESULTS_DIR = os.path.join(PROJECT_ROOT, "Results")
 RESULTS_PATH = os.path.join(RESULTS_DIR, "results.xlsx")
 
 # Dataset config: (sheet_index, prompt_column) per sheet
