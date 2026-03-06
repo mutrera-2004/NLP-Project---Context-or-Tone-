@@ -3,6 +3,7 @@ Run the inference pipeline: load data, run models via Modal, save results.
 Adjust hyperparameters below before running.
 """
 
+import os
 from pathlib import Path
 
 import modal
@@ -18,23 +19,26 @@ from modal_inference import app, ModelRunner
 MODEL_CONFIGS = [
     ("meta-llama/Llama-3.1-8B-Instruct", "Llama"),
     ("google/gemma-7b-it", "Gemma"),
+    ("Qwen/Qwen2.5-7B-Instruct", "Qwen"),
 ]
-BATCH_SIZE = 8 # process one at a time to avoid padding issues
+BATCH_SIZE = 16
 MAX_TOKENS = 200
 MIN_TOKENS = 100
 
-# Paths
-DATA_PATH = "Data/nlp-queries-dataset.xlsx"
-RESULTS_DIR = "results"
-RESULTS_PATH = "results/results.xlsx"
+# Paths (resolved relative to this script, not cwd)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+DATA_PATH = os.path.join(PROJECT_ROOT, "Data", "new-nlp-queries-dataset.xlsx")
+RESULTS_DIR = os.path.join(PROJECT_ROOT, "results")
+RESULTS_PATH = os.path.join(RESULTS_DIR, "results.xlsx")
 
 # Dataset config: (sheet_index, prompt_column) per sheet
 # Sheets: Advench, Context Shift, Polite Shift, Both Shift
 DATASET_CONFIG = [
-    ("goal", "Advench"),
-    ("context_goal", "Context Shift"),
-    ("polite_goal", "Polite Shift"),
-    ("context_polite_goal", "Both Shift"),
+    ("goal", "case-a"),
+    ("context_shifted_target", "case-b"),
+    ("politeness_shifted_target", "case-c"),
+    ("both_shifted_target", "case-d"),
 ]
 
 
@@ -63,7 +67,6 @@ def run_inference():
             runner = ModelRunner(model_name=model_id)
 
             for i, (df, prompts, name) in enumerate(zip(dfs, all_prompts, names)):
-                n_batches = (len(prompts) + BATCH_SIZE - 1) // BATCH_SIZE
                 outputs = []
 
                 with tqdm(total=len(prompts), desc=f"{name} ({col_name})", unit="prompt") as pbar:
