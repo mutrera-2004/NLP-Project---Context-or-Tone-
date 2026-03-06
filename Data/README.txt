@@ -1,0 +1,3 @@
+v1: 520 prompts; from Advench only; the "final direction" for cases B, C, and D was ambiguous so we have to modify.
+v2: 734 prompts; from Advench + generated; added specific prompts to resolve ambiguity regarding the final direction/outcome + added OpenAI category 1-14 and generate additional prompts to ensure each category has at least 30 prompts
+v3: 520 prompts; from Advench only; resolve ambiguity regarding the final direction/outcome + remove category
