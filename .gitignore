@@ -1,5 +1,10 @@
 venv/
 models/
-*/__pycache__
+
+# Mac OS junk
 .DS_Store
 ~$*.xlsx
+
+# Python bytecode
+__pycache__/
+*.pyc
