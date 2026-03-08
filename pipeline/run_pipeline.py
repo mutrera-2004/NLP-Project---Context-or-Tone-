@@ -28,11 +28,11 @@ MIN_TOKENS = 100
 # Paths (resolved relative to this script, not cwd)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-DATA_PATH = os.path.join(PROJECT_ROOT, "Data", "nlp-queries-dataset.xlsx")
-RESULTS_DIR = os.path.join(PROJECT_ROOT, "Results")
+DATA_PATH = os.path.join(PROJECT_ROOT, "Data", "nlp-queries-dataset-v3.xlsx")
+RESULTS_DIR = os.path.join(PROJECT_ROOT, "results")
 RESULTS_PATH = os.path.join(RESULTS_DIR, "results.xlsx")
 
-# Dataset config: (sheet_index, prompt_column) per sheet
+# Dataset config: (base_prompt_column, sheet_name) per sheet
 # Sheets: Advench, Context Shift, Polite Shift, Both Shift
 DATASET_CONFIG = [
     ("goal", "case-a"),
@@ -40,48 +40,66 @@ DATASET_CONFIG = [
     ("politeness_shifted_target", "case-c"),
     ("both_shifted_target", "case-d"),
 ]
+LANGUAGES = ["en", "es", "zh", "ja"]
 
 
 def load_data(data_path: str) -> tuple[list[pd.DataFrame], list[str], list[str]]:
-    """Load Excel sheets and return (dataframes, prompt columns, sheet names)."""
+    """Load Excel sheets and return (dataframes, sheet names, base columns)."""
     xl = pd.ExcelFile(data_path)
-    sheets = xl.sheet_names
-    dfs = [pd.read_excel(data_path, sheet_name=s) for s in sheets]
-    prompt_cols = [c for c, _ in DATASET_CONFIG]
+    base_cols = [c for c, _ in DATASET_CONFIG]
     names = [n for _, n in DATASET_CONFIG]
-    return dfs, prompt_cols, names
+    dfs = []
+    for name in names:
+        if name not in xl.sheet_names:
+            raise ValueError(f"Sheet '{name}' not found in {data_path}. Available: {xl.sheet_names}")
+        dfs.append(pd.read_excel(data_path, sheet_name=name))
+    return dfs, names, base_cols
+
+
+def _prompt_col_for_lang(base_col: str, lang: str) -> str:
+    """Resolve prompt column for language: base_col for en, base_col_es for es, etc."""
+    if lang == "en":
+        return base_col
+    return f"{base_col}_{lang}"
 
 
 def run_inference():
     Path(RESULTS_DIR).mkdir(parents=True, exist_ok=True)
 
-    dfs, prompt_cols, names = load_data(DATA_PATH)
-    all_prompts = [df[col].astype(str).tolist() for df, col in zip(dfs, prompt_cols)]
+    dfs, names, base_cols = load_data(DATA_PATH)
 
     modal.enable_output()
     with app.run():
-        for model_id, col_name in MODEL_CONFIGS:
+        for model_id, model_name in MODEL_CONFIGS:
             print(f"\n{'='*60}")
-            print(f"Model: {col_name} ({model_id})")
+            print(f"Model: {model_name} ({model_id})")
             print("="*60)
             runner = ModelRunner(model_name=model_id)
 
-            for i, (df, prompts, name) in enumerate(zip(dfs, all_prompts, names)):
-                outputs = []
+            for i, (df, base_col, name) in enumerate(zip(dfs, base_cols, names)):
+                for lang in LANGUAGES:
+                    prompt_col = _prompt_col_for_lang(base_col, lang)
+                    if prompt_col not in df.columns:
+                        print(f"  Warning: '{prompt_col}' not in sheet '{name}', skipping.")
+                        continue
 
-                with tqdm(total=len(prompts), desc=f"{name} ({col_name})", unit="prompt") as pbar:
-                    for j in range(0, len(prompts), BATCH_SIZE):
-                        batch = prompts[j : j + BATCH_SIZE]
-                        batch_out = runner.generate_batch.remote(
-                            batch,
-                            max_new_tokens=MAX_TOKENS,
-                            min_tokens=MIN_TOKENS,
-                        )
-                        outputs.extend(batch_out)
-                        pbar.update(len(batch))
+                    prompts = df[prompt_col].astype(str).tolist()
+                    out_col = f"{model_name}_{lang}"
+                    outputs = []
 
-                dfs[i][col_name] = outputs
-                print(f"  {name}: {len(outputs)} responses")
+                    with tqdm(total=len(prompts), desc=f"{name} ({out_col})", unit="prompt") as pbar:
+                        for j in range(0, len(prompts), BATCH_SIZE):
+                            batch = prompts[j : j + BATCH_SIZE]
+                            batch_out = runner.generate_batch.remote(
+                                batch,
+                                max_new_tokens=MAX_TOKENS,
+                                min_tokens=MIN_TOKENS,
+                            )
+                            outputs.extend(batch_out)
+                            pbar.update(len(batch))
+
+                    dfs[i][out_col] = outputs
+                    print(f"  {name} {out_col}: {len(outputs)} responses")
 
     with pd.ExcelWriter(RESULTS_PATH, engine="openpyxl") as writer:
         for df, name in zip(dfs, names):
