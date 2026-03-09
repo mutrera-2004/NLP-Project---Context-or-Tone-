@@ -170,9 +170,14 @@ def run_judge(path_bytes: bytes):
                         print(f"Warning: column '{prompt_col}' not found in sheet '{sheet_name}', skipping.")
                         continue
 
+                    model_output_col = f"{model_col}_{lang}"
+                    if model_output_col not in df.columns:
+                        print(f"Warning: column '{model_output_col}' not found in sheet '{sheet_name}', skipping.")
+                        continue
+
                     verdict_col = f"{model_col}_{lang}_verdict"
                     all_queries = df[prompt_col].astype(str).tolist()
-                    all_responses = df[model_col].astype(str).tolist()
+                    all_responses = df[model_output_col].astype(str).tolist()
                     verdicts = []
 
                     for i in range(0, len(all_queries), BATCH_SIZE):
